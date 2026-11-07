@@ -3,7 +3,7 @@ from collections import OrderedDict
 from pickle import dumps, loads
 from unittest.mock import Mock
 
-from pytest import raises
+from pytest import mark, raises
 
 from pyee import EventEmitter
 
@@ -296,6 +296,36 @@ def test_once_is_removed_before_reentrant_emit():
     assert ee.emit("event", 3) is True
     assert calls[-1] == ("persistent", 3)
     assert len(calls) == 4
+
+
+@mark.parametrize("registration", ["once", "on"])
+def test_once_reentrant_emit_preserves_replacement(registration):
+    """An old once wrapper must not consume a newly registered handler."""
+    ee = EventEmitter()
+    calls = []
+
+    @ee.on("event")
+    def emit_nested(value):
+        if value == "outer":
+            ee.emit("event", "inner")
+
+    def handler(value):
+        calls.append(value)
+        if value == "inner":
+            getattr(ee, registration)("event", handler)
+
+    ee.once("event", handler)
+    ee.emit("event", "outer")
+
+    assert calls == ["inner"]
+    assert ee.listeners("event") == [emit_nested, handler]
+
+    ee.emit("event", "next")
+    assert calls == ["inner", "next"]
+    if registration == "once":
+        assert ee.listeners("event") == [emit_nested]
+    else:
+        assert ee.listeners("event") == [emit_nested, handler]
 
 
 def test_listeners():

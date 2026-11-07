@@ -1,5 +1,10 @@
 # Changelog
 
+## xxxx.yy.zz Version x.y.z
+
+- 🤖 Preserve replacement listeners when an old `once` wrapper runs again during
+  nested or queued event emission.
+
 ## 2026/10/31 🎃 Version 16.0.1
 
 - Remove `requirements.txt` and `requirements_dev.txt` files

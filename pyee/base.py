@@ -293,9 +293,9 @@ class EventEmitter:
                 **kwargs: Any,
             ) -> Any:
                 with self._lock:
-                    # Check that the event wasn't removed already right
-                    # before the lock
-                    if event in self._events and f in self._events[event]:
+                    # A previous call may have removed this registration and
+                    # added a new one for the same handler.
+                    if event in self._events and self._events[event].get(f) is g:
                         self._remove_listener(event, f)
                     else:
                         return None
